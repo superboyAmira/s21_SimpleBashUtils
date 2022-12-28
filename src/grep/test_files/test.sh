@@ -60,9 +60,19 @@ else
     echo "\033[41mFAIL\033[0m"
 fi
 
-./../s21_grep -n bla bla.txt > res_S21.txt
-grep -n bla bla.txt > res.txt
+./../s21_grep -n bla bla.txt blabla.txt > res_S21.txt
+grep -n bla bla.txt blabla.txt > res.txt
 echo "-n options testing:"
+LEN=$(diff res.txt res_S21.txt | wc -l)
+if [ $LEN == 0 ]; then 
+    echo "\033[32mSUCCESS\033[0m"
+else
+    echo "\033[41mFAIL\033[0m"
+fi
+
+./../s21_grep -s bla bla.txt no.txt > res_S21.txt
+grep -s bla bla.txt no.txt > res.txt
+echo "-s options testing:"
 LEN=$(diff res.txt res_S21.txt | wc -l)
 if [ $LEN == 0 ]; then 
     echo "\033[32mSUCCESS\033[0m"

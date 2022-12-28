@@ -31,6 +31,9 @@ int parser(int argc, char *argv[], OPT *flags, char *buffer_patterns) {
         flags->l = 1;
         disable = FALSE;
         break;
+      case 's':
+        flags->s = 1;
+        break;
     }
   }
   return disable;
@@ -41,6 +44,22 @@ void E_plus(char *buffer_patterns, OPT *flags) {
     strcat(buffer_patterns, "|");
   }
   strcat(buffer_patterns, optarg);
+}
+
+void print(char *current_line, int more_files, char **argv) {
+  if (current_line[strlen(current_line) - 1] == '\n') {
+    if (more_files) {
+      printf("%s:%s", argv[optind], current_line);
+    } else {
+      printf("%s", current_line);
+    }
+  } else {
+    if (more_files) {
+      printf("%s:%s\n", argv[optind], current_line);
+    } else {
+      printf("%s\n", current_line);
+    }
+  }
 }
 
 void output(char *buffer_patterns, OPT *flags, int argc, char **argv,
@@ -61,15 +80,13 @@ void output(char *buffer_patterns, OPT *flags, int argc, char **argv,
     exit(1);
   }
   for (; optind < argc; optind++) {
-    if (argc > 4) {
+    if (argc > 4 || (argc > 3 && disable)) {
       more_files = TRUE;
     }
-    if ((file = fopen(argv[optind], "r")) == NULL) {
+    if ((file = fopen(argv[optind], "r")) == NULL && (flags->s != TRUE)) {
       fprintf(stderr, "s21_grep: %s: No such file or directory\n",
               argv[optind]);
-    }
-
-    if (file != NULL) {
+    } else if (file != NULL) {
       char current_line[SIZE] = {0};
       int str_num = 0;
       int str_not_empty_count = 0;
@@ -80,34 +97,30 @@ void output(char *buffer_patterns, OPT *flags, int argc, char **argv,
         int status_err =
             regexec(&reg_comp, current_line, nmatch, struct_reg, 0);
         if (status_err == FALSE && (flags->e || flags->i)) {
-          if (more_files) {
-            printf("%s:%s", argv[optind], current_line);
-          } else {
-            printf("%s", current_line);
-          }
+          print(current_line, more_files, argv);
         } else if (status_err == FALSE && flags->n) {
-          if (more_files) {
-            printf("%s:%d:%s", argv[optind], str_num, current_line);
+          if (current_line[strlen(current_line) - 1] == '\n') {
+            if (more_files) {
+              printf("%s:%d:%s", argv[optind], str_num, current_line);
+            } else {
+              printf("%d:%s", str_num, current_line);
+            }
           } else {
-            printf("%d:%s", str_num, current_line);
+            if (more_files) {
+              printf("%s:%d:%s\n", argv[optind], str_num, current_line);
+            } else {
+              printf("%d:%s\n", str_num, current_line);
+            }
           }
           exist = TRUE;
         } else if (status_err == FALSE && flags->c) {
           str_not_empty_count++;
         } else if (status_err != FALSE && flags->v) {
-          if (more_files) {
-            printf("%s:%s", argv[optind], current_line);
-          } else {
-            printf("%s", current_line);
-          }
+          print(current_line, more_files, argv);
         } else if (status_err == FALSE && flags->l) {
           exist = TRUE;
         } else if (status_err == FALSE && disable) {
-          if (argc > 3) {
-            printf("%s:%s", argv[optind], current_line);
-          } else {
-            printf("%s", current_line);
-          }
+          print(current_line, more_files, argv);
         }
       }
       if (more_files && flags->c) {
@@ -119,14 +132,8 @@ void output(char *buffer_patterns, OPT *flags, int argc, char **argv,
       } else if (exist && flags->l) {
         printf("%s\n", argv[optind]);
       }
-
-      if (flags->v || disable || (flags->n && exist == TRUE)) printf("\n");
-
       exist = FALSE;
       fclose(file);
-    } else {
-      fprintf(stderr, "s21_grep: %s: No such file or directory\n",
-              argv[optind]);
     }
   }
   regfree(&reg_comp);

@@ -21,10 +21,11 @@ typedef struct options {
   int c;
   int l;
   int n;
+  int s;
   int new_word;
 } OPT;
 
-const char *short_options = "e:ivcln";
+const char *short_options = "e:ivclns";
 
 int parser(int argc, char *argv[], OPT *flags, char *buffer_patterns);
 void output(char *buffer_patterns, OPT *flags, int argc, char **argv,
