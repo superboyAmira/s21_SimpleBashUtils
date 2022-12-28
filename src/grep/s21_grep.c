@@ -33,6 +33,7 @@ int parser(int argc, char *argv[], OPT *flags, char *buffer_patterns) {
         break;
       case 's':
         flags->s = 1;
+        disable = FALSE;
         break;
     }
   }
